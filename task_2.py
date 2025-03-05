@@ -1,6 +1,7 @@
+import argparse
 import json
 import time
-from hyperloglog import HyperLogLog
+from datasketch import HyperLogLog
 
 
 def load_ip_addresses(filename):
@@ -15,21 +16,21 @@ def load_ip_addresses(filename):
                 continue
     return ip_addresses
 
-
 def count_unique_ips_set(ip_addresses):
     return len(set(ip_addresses))
 
-
-def count_unique_ips_hll(ip_addresses, precision=0.01):
+def count_unique_ips_hll(ip_addresses, precision=12):
     hll = HyperLogLog(precision)
     for ip in ip_addresses:
-        hll.add(ip)
+        hll.update(ip.encode('utf-8'))
     return len(hll)
 
-
 def main():
-    filename = 'lms-stage-access.log'
-    ip_addresses = load_ip_addresses(filename)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('filename', type=str, nargs='?', default='lms-stage-access.log', help='Path to file')
+    args = parser.parse_args()
+
+    ip_addresses = load_ip_addresses(args.filename)
 
     start_time = time.time()
     exact_count = count_unique_ips_set(ip_addresses)
